@@ -1,5 +1,6 @@
 return {
   'sindrets/diffview.nvim',
+  cond = not vim.g.vscode,
   event = 'VeryLazy',
   dependencies = {
     'nvim-lua/plenary.nvim',
