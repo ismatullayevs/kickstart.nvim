@@ -1,3 +1,14 @@
+vim.api.nvim_create_autocmd('VimEnter', {
+  callback = function()
+    local file = vim.fn.expand '%:p'
+    if vim.fn.isdirectory(file) == 1 then
+      vim.cmd('cd ' .. file)
+    elseif vim.fn.filereadable(file) == 1 then
+      vim.cmd('cd ' .. vim.fn.fnamemodify(file, ':h'))
+    end
+  end,
+})
+
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
@@ -351,7 +362,6 @@ require('lazy').setup({
       local builtin = require 'telescope.builtin'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -361,7 +371,8 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
       vim.keymap.set('n', '<leader>sa', function()
         builtin.find_files { no_ignore = true, hidden = true }
-      end, { desc = '[S]earch [A]ll Files' })
+      end, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sf', builtin.git_files, { desc = '[S]earch [F]iles tracked by Git' })
       vim.keymap.set('n', 'gd', builtin.lsp_definitions, { desc = '[G]oto [D]efinition' })
 
       -- Slightly advanced example of overriding default behavior and theme
@@ -604,7 +615,18 @@ require('lazy').setup({
       local servers = {
         -- clangd = {},
         -- gopls = {},
-        pyright = {},
+        pyright = {
+          on_init = function(client)
+            local cwd = client.config.root_dir
+            local venv = cwd .. '/.venv/bin/python' -- or 'env', 'venv', etc.
+            if vim.fn.executable(venv) == 1 then
+              client.config.settings.python = {
+                pythonPath = venv,
+              }
+            end
+          end,
+          root_dir = require('lspconfig.util').root_pattern('.venv', 'pyproject.toml', '.git'),
+        },
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
