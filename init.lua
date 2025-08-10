@@ -1,14 +1,4 @@
-vim.api.nvim_create_autocmd('VimEnter', {
-  callback = function()
-    local file = vim.fn.expand '%:p'
-    if vim.fn.isdirectory(file) == 1 then
-      vim.cmd('cd ' .. file)
-    elseif vim.fn.filereadable(file) == 1 then
-      vim.cmd('cd ' .. vim.fn.fnamemodify(file, ':h'))
-    end
-  end,
-})
-
+vim.o.expandtab = true
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
@@ -372,7 +362,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sa', function()
         builtin.find_files { no_ignore = true, hidden = true }
       end, { desc = '[S]earch [F]iles' })
-      vim.keymap.set('n', '<leader>sf', builtin.git_files, { desc = '[S]earch [F]iles tracked by Git' })
+      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', 'gd', builtin.lsp_definitions, { desc = '[G]oto [D]efinition' })
 
       -- Slightly advanced example of overriding default behavior and theme
@@ -615,18 +605,6 @@ require('lazy').setup({
       local servers = {
         -- clangd = {},
         -- gopls = {},
-        pyright = {
-          on_init = function(client)
-            local cwd = client.config.root_dir
-            local venv = cwd .. '/.venv/bin/python' -- or 'env', 'venv', etc.
-            if vim.fn.executable(venv) == 1 then
-              client.config.settings.python = {
-                pythonPath = venv,
-              }
-            end
-          end,
-          root_dir = require('lspconfig.util').root_pattern('.venv', 'pyproject.toml', '.git'),
-        },
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -635,8 +613,23 @@ require('lazy').setup({
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         ts_ls = {},
-        --
-
+        ruff = {
+          init_options = {
+            settings = {},
+          },
+        },
+        pyright = {
+          settings = {
+            pyright = {
+              disableOrganizeImports = true, -- Using Ruff
+            },
+            python = {
+              analysis = {
+                ignore = { '*' }, -- Using Ruff
+              },
+            },
+          },
+        },
         lua_ls = {
           -- cmd = { ... },
           -- filetypes = { ... },
@@ -715,18 +708,25 @@ require('lazy').setup({
           return nil
         else
           return {
-            timeout_ms = 500,
+            timeout_ms = 5000,
             lsp_format = 'fallback',
           }
         end
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+
+        javascript = { 'prettierd' },
+        typescript = { 'prettierd' },
+        javascriptreact = { 'prettierd' },
+        typescriptreact = { 'prettierd' },
+
+        python = {
+          'ruff_fix',
+          'ruff_format',
+        },
         -- Conform can also run multiple formatters sequentially
-        python = { 'isort', 'black' },
-        --
         -- You can use 'stop_after_first' to run the first available formatter from the list
-        javascript = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
@@ -937,7 +937,7 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.indent_line',
   require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
   require 'kickstart.plugins.neo-tree',

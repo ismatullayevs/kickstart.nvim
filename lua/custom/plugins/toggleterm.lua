@@ -1,6 +1,6 @@
 return {
   'akinsho/toggleterm.nvim',
-  cond = not vim.g.vscode,
+  cond = false,
   version = '*',
   opts = {
     size = 15,
